@@ -1,23 +1,18 @@
 # -*- coding:utf-8 -*-
 
 from sklearn import linear_model
-# import numpy as np
+import numpy as np
 
 
 def readAllData(fname):
-    data = []
-    X = []
-    Y = []
-    with open(fname, 'r') as f:
-        for line in f.readlines():
-            line = line.strip().split(',')
-            data.append(list(map(lambda x: float(x), line[:-2])))
-            X.append(float(line[-2]))
-            Y.append(float(line[-1]))
-        return data, X, Y
+
+    data = np.loadtxt(fname, delimiter=',', usecols=(0, 1, 2))
+    X = np.loadtxt(fname, delimiter=',', usecols=(3))
+    Y = np.loadtxt(fname, delimiter=',', usecols=(4))
+    return data, X, Y
 
 
-D, X, Y = readAllData('all.txt')
+D, X, Y = readAllData('左转.txt')
 
 # xx, yy = np.meshgrid(np.linspace(0,10,10), np.linspace(0,100,10))
 # zz = 1.0 * xx + 3.5 * yy + np.random.randint(0,100,(10,10))
