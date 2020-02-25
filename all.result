@@ -1,0 +1,62 @@
+|| [python "/home/itt/Coding/pySpree/car/processData.py"]
+|| newalldata,alldata======================================
+|| groupSize: 1 => 准确率:0.23
+|| groupSize: 2 => 准确率:0.30
+|| groupSize: 3 => 准确率:0.38
+|| groupSize: 4 => 准确率:0.45
+|| groupSize: 5 => 准确率:0.52
+|| groupSize: 6 => 准确率:0.57
+|| groupSize: 7 => 准确率:0.62
+|| groupSize: 8 => 准确率:0.67
+|| groupSize: 9 => 准确率:0.71
+|| groupSize:10 => 准确率:0.75
+|| groupSize:11 => 准确率:0.78
+|| groupSize:12 => 准确率:0.80
+|| groupSize:13 => 准确率:0.82
+|| groupSize:14 => 准确率:0.84
+|| groupSize:15 => 准确率:0.85
+|| groupSize:16 => 准确率:0.86
+|| groupSize:17 => 准确率:0.86
+|| groupSize:18 => 准确率:0.87
+|| groupSize:19 => 准确率:0.88
+|| newalldata======================================
+|| groupSize: 1 => 准确率:0.17
+|| groupSize: 2 => 准确率:0.24
+|| groupSize: 3 => 准确率:0.36
+|| groupSize: 4 => 准确率:0.42
+|| groupSize: 5 => 准确率:0.47
+|| groupSize: 6 => 准确率:0.52
+|| groupSize: 7 => 准确率:0.56
+|| groupSize: 8 => 准确率:0.60
+|| groupSize: 9 => 准确率:0.64
+|| groupSize:10 => 准确率:0.68
+|| groupSize:11 => 准确率:0.70
+|| groupSize:12 => 准确率:0.73
+|| groupSize:13 => 准确率:0.76
+|| groupSize:14 => 准确率:0.77
+|| groupSize:15 => 准确率:0.79
+|| groupSize:16 => 准确率:0.80
+|| groupSize:17 => 准确率:0.80
+|| groupSize:18 => 准确率:0.82
+|| groupSize:19 => 准确率:0.82
+|| alldata======================================
+|| groupSize: 1 => 准确率:0.51
+|| groupSize: 2 => 准确率:0.56
+|| groupSize: 3 => 准确率:0.62
+|| groupSize: 4 => 准确率:0.67
+|| groupSize: 5 => 准确率:0.73
+|| groupSize: 6 => 准确率:0.80
+|| groupSize: 7 => 准确率:0.84
+|| groupSize: 8 => 准确率:0.88
+|| groupSize: 9 => 准确率:0.90
+|| groupSize:10 => 准确率:0.92
+|| groupSize:11 => 准确率:0.93
+|| groupSize:12 => 准确率:0.94
+|| groupSize:13 => 准确率:0.95
+|| groupSize:14 => 准确率:0.95
+|| groupSize:15 => 准确率:0.96
+|| groupSize:16 => 准确率:0.96
+|| groupSize:17 => 准确率:0.96
+|| groupSize:18 => 准确率:0.97
+|| groupSize:19 => 准确率:0.97
+|| [Finished in 1274 seconds]
