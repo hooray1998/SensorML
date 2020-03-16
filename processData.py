@@ -17,24 +17,25 @@ class processData():
     def loadFile(self, fname):
         self.data = np.loadtxt(fname, delimiter=',', usecols=(1, 2, 3))
         self.size = len(self.data)
-        self.getDegress(fname)
-        self.getPerDegress()
+        self.getDegrees(fname)
+        self.getPerDegrees()
 
-    def getDegress(self, fname):
+    def getDegrees(self, fname):
+
         if '直行' in fname:
-            self.degress = 0
+            self.degrees = 0
         elif '左转' in fname:
-            self.degress = 90
+            self.degrees = 90
         elif '右转' in fname:
-            self.degress = -90
+            self.degrees = -90
         elif '左掉头' in fname:
-            self.degress = 180
+            self.degrees = 180
         elif '右掉头' in fname:
-            self.degress = -180
-        # print('degress:', self.degress, end=',')
+            self.degrees = -180
+        # print('degrees:', self.degress, end=',')
 
-    def getPerDegress(self):
-        self.preDegress = self.degress / self.size
+    def getPerDegrees(self):
+        self.preDegress = self.degrees / self.size
         # print('pre:', self.preDegress)
 
     def divideData(self, step):
@@ -84,7 +85,8 @@ class processData():
         # return
         for index in range(step, self.size - 1, step):
             x, y, z = list(self.data[index, :] - self.data[last, :])
-            line = [self.normalize(x), self.normalize(y), self.normalize(z), changeDegress]
+            line = [self.normalize(x), self.normalize(
+                y), self.normalize(z), changeDegress]
             last = index
             self.newdata.append(line)
             # print(line)
@@ -111,7 +113,7 @@ class RegrModel():
         self.Y = self.data[:, -1]
         # x为数据集的feature熟悉，y为label
         self.x_train, self.x_test, self.y_train, self.y_test = train_test_split(self.X, self.Y, test_size = 0.3)
-        # print('shage ', np.shape(self.x_train), np.shape(self.y_train), np.shape(self.x_test), np.shape(self.y_test))
+        # print('shape ', np.shape(self.x_train), np.shape(self.y_train), np.shape(self.x_test), np.shape(self.y_test))
 
     def fit(self, Model):
         regr = Model
@@ -156,12 +158,12 @@ if __name__ == "__main__":
 
     # time = 50
     # for groupSize in range(1, 20):
-        # sum = 0
-        # for i in range(time):
-            # divide(['newalldata/', 'alldata/'], 'Angular', groupSize)
-            # m = RegrModel('divide.dat')
-            # sum += m.fit(linear_model.LinearRegression())
-        # print('groupSize:%2d => 准确率:%.2f' % (groupSize, sum / time))
+    # sum = 0
+    # for i in range(time):
+    # divide(['newalldata/', 'alldata/'], 'Angular', groupSize)
+    # m = RegrModel('divide.dat')
+    # sum += m.fit(linear_model.LinearRegression())
+    # print('groupSize:%2d => 准确率:%.2f' % (groupSize, sum / time))
     divide(['newalldata/', 'alldata/'], 'Angular', 10)
     m = RegrModel('divide.dat')
     m.fit(linear_model.LinearRegression())

@@ -9,7 +9,6 @@ import re
 
 
 class processLinear():
-
     def __init__(self, fname, limit):
         self.name = fname
         self.loadFile(fname, limit)
@@ -43,8 +42,10 @@ class processLinear():
         '''
         speed: m/s
         '''
-        self.speed = self.distance * 1000 / (self.data[-1,0] - self.data[0,0])
-        self.stepSpeed = self.step * 1000 / (self.data[-1,0] - self.data[0,0])
+        self.speed = self.distance * 1000 / \
+            (self.data[-1, 0] - self.data[0, 0])
+        self.stepSpeed = self.step * 1000 / \
+            (self.data[-1, 0] - self.data[0, 0])
 
     def getStep(self, limit):
         def f1(line):
@@ -92,6 +93,7 @@ class processLinear():
 
 class RegrModel():
     def __init__(self, datafile):
+
         with open(datafile, 'rb') as f:
             data = pickle.load(f)
         self.data = np.array(data)
@@ -99,12 +101,14 @@ class RegrModel():
         self.X = self.data[:, :-1]
         self.Y = self.data[:, -1]
         # x为数据集的feature熟悉，y为label
-        # self.x_train, self.x_test, self.y_train, self.y_test = train_test_split(self.X, self.Y, test_size = 0.3)
-        # print('shage ', np.shape(self.x_train), np.shape(self.y_train), np.shape(self.x_test), np.shape(self.y_test))
+        self.x_train, self.x_test, self.y_train, self.y_test = train_test_split(
+            self.X, self.Y, test_size=0.3)
+        print('shage ', np.shape(self.x_train), np.shape(self.y_train),
+              np.shape(self.x_test), np.shape(self.y_test))
 
     def fit(self, Model):
         regr = Model
-        regr.fit(self.X, self.Y)   # 注意此处.reshape(-1, 1)，因为X是一维的！
+        regr.fit(self.X, self.Y)  # 注意此处.reshape(-1, 1)，因为X是一维的！
         # regr.fit(self.x_train, self.y_train)   # 注意此处.reshape(-1, 1)，因为X是一维的！
         self.model = regr
         print('准确率:', regr.score(self.X, self.Y))
@@ -126,6 +130,8 @@ class RegrModel():
 
 
 def divide(folderList, whichFile, limit, testSize=-1):
+    '''
+    '''
     D = []
     count = 0
     for folder in folderList:
@@ -139,6 +145,7 @@ def divide(folderList, whichFile, limit, testSize=-1):
                 break
         if count == testSize:
             break
+
     D.append([0, 0])
     D.append([0, 0])
     D.append([0, 0])
