@@ -91,19 +91,24 @@ def recognizeStraight(newTime, newValue, straightTime=5):
     retOrient = []
     goLen = 0
     lastIsGo = False
-    for i in range(straightTime, len(newTime)+1):
+    #  for i in range(straightTime, len(newTime)+1):
+    i = straightTime
+    while i <= len(newTime):
         curIsGo = judgeStraight(newValue[i - straightTime: i])
         # 判断i前面的，不包括i点
         if curIsGo and lastIsGo:  # 直行继续
             goLen += 1
+        elif curIsGo:  # 开始检测出直行
+            goLen = 5
         elif lastIsGo:  # 直行中断
             retValue.append(newValue[i-2])
             retTime.append(newTime[i-2])
             retLen.append(goLen)
             retOrient.append(calGoOrientAvg(newValue[i-goLen-1: i-1]))
-        elif curIsGo:  # 开始检测出直行
-            goLen = 5
+            # 跳过这一段
+            i += 4
         lastIsGo = curIsGo
+        i += 1
 
     if lastIsGo:
         retValue.append(newValue[-1])

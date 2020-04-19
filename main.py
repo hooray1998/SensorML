@@ -26,7 +26,7 @@ from calDegree import averageOrient, recognizeStraight
 
 
 def mo(l):
-    return sum([v**2 for v in l])
+    return sum([v**2 for v in l])**0.5
 
 
 def loadData(folderList, curProcess):
@@ -47,8 +47,8 @@ def loadData(folderList, curProcess):
 
 
 def main():
-    process = 'Ori'
-    dataMat = loadData(['./carGoData/'], process)
+    process = 'Lin'
+    dataMat = loadData(['./419-data/'], process)
 
     for times, values in dataMat:
         plt.plot(times, values)
@@ -56,12 +56,13 @@ def main():
             newT, newV = averageOrient(times, values, 1000)
             plt.plot(newT, newV, 'o-', ms=8)
             newT, newV, goLen, goOrient = recognizeStraight(newT, newV)
+            plt.title("文件名 => %s" % (process))
             plt.plot(newT, newV, 'v', ms=20)
             for i in range(0, len(goLen)):
                 print(newT[i], goLen[i] * 2, goOrient[i])
         elif 'L' in process:
             topList = calStep(times, values)
-            plt.title("Step:%d => %d" % (stepDict['7'], len(topList)))
+            plt.title("步数 => %d" % (len(topList)))
             plt.plot(times[topList], values[topList], 'o')
         mng = plt.get_current_fig_manager()
         mng.full_screen_toggle()
