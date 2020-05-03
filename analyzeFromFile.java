@@ -12,63 +12,69 @@ import java.text.SimpleDateFormat;
 //      比如100s允许向两边各延迟5s,然后看彼此的连接度
 //直行的话需要看方向是否一致,一致的话再连接两个区间到一起
 //
+
+/*
+ * 首先读取方向文件的数据,把每秒的平均方向存储起来
+ * 然后读取加速度数据,
+ */
 public class analyzeFromFile {
     private static long startTime;
 
-    private static int topSize;
-    private static double[] topArr;
-
-    private static int linearSize;
-    private static int[] stepArr;
-    private static int curStep;
-    private static float[] degressArr;
-    private static int degreeSize;
-    private static final int MaxSize = 216000;//6hx60x60 = 36000x6 = 216000s
-
+    // 先读取方向传感器,更新到
     private static float[] oneSecondDegreeArr;
     private static int oneSecondDegreeLen;
-    private static long oneSecondDegreeStartTime;
     private static long oneSecondDegreeEndTime;
-    private static double oneSecondTopSum;
-    private static long oneSecondTopCount;
 
-    private static long lastStepTime;
+    private static float[] degreeArr;
+    private static int degreeArrSize;
+
+    // 再读取加速度数据,得到每秒累计的步数,以及每秒最大的加速度值,用来判断是否停止了
+    private static double[] topArr;
+    private static double topMaxValue; //每秒最大的g值
+    private static int[] stepArr;
+    private static int stepArrSize;
+    private static int curStep;
+    private static float lastStepValue;
+    private static long lastStepTime; // 上一次记录步数的时间,用来判断两步之间的时间间隔要大于0.3s
     private static boolean lastStepUp;
 
+    // 用来判断停止的时间区间
     private static int waitStopIndex;
     private static boolean lastIsStop;//上一秒是否在直行区间内(不是前五秒)
     private static int stopLen;//当前秒是否在直行(>=5),以及直行了多少秒了(总是大于等于5),因为5s内不算一段有效的直行
-    private static int MinStopTime       = 3    ; //最短的直行有效时间,单位秒s
     private static int stopCount;
-    private static int stopDistance;
-    private static double stopScore        = 0.6  ; //5s中要有80%的点符合limit
+    private static int[] stopArr;
+    private static int stopArrSize;
 
     //直行区间总是>=5s
-    private static int waitIndex;
-    private static int goLen;//当前秒是否在直行(>=5),以及直行了多少秒了(总是大于等于5),因为5s内不算一段有效的直行
+    private static int waitIndex; // 监听的时刻,如果当前秒不监听,则跳过
     private static boolean lastIsGo;//上一秒是否在直行区间内(不是前五秒)
-    private static boolean recording;
-    private static float lastStepValue;
-
+    private static int goLen;//当前秒是否在直行(>=5),以及直行了多少秒了(总是大于等于5)
     private static int goCount;
     private static int goDistance;
 
-    private static int MinStepTime     = 300  ; //每一圈之间的最短间隔,单位毫秒ms
-    private static double MinStepValue = 10.5 ; //最小的峰值
-    private static int MinGoTime       = 5    ; //最短的直行有效时间,单位秒s
-    private static int limit           = 25   ; //直行偏差在均值的+-15度以内
-    private static double score        = 0.8  ; //5s中要有80%的点符合limit
+    // 方向判断和步数判断的一些常量
+    private static final int MinStopTime       = 3    ; //最短的停止有效时间,单位秒
+    private static final double stopScore        = 0.6  ; //MinStopTime 秒的时间内要有超过 3x0.6s的秒数停止=>这三秒算作有效的停止区间
+    private static final int MinStepTime     = 300  ; //每一圈之间的最短间隔,单位毫秒ms
+    private static final double MinStepValue = 10.5 ; //最小的峰值
+    private static final int MinGoTime       = 5    ; //最短的直行有效时间,单位秒s
+    private static final int limit           = 25   ; //直行偏差在均值的+-15度以内
+    private static final double score        = 0.8  ; //5s中要有80%的点符合limit
+    private static final int MaxSize = 216000;//6hx60x60 = 36000x6 = 216000s  数组的最大长度
 
     public static void main(String[] args){
         oneSecondDegreeArr = new float[100];
-        degressArr = new float[MaxSize];
+        degreeArr = new float[MaxSize];
         stepArr = new int[MaxSize];
         topArr = new double[MaxSize];
+        stopArr = new int[MaxSize];
 
         predictRoute("./419-data/1587283150306_predict_Linear.txt");
     }
 
     public static void initVariable() {
+        topMaxValue = 0;
         lastStepTime = -MinStepTime;
         lastStepUp = false;
         lastStepValue = 10000;
@@ -80,14 +86,15 @@ public class analyzeFromFile {
         lastIsStop = false;
         stopLen = 0;
         stopCount = 0;
-        stopDistance = 0;
 
         curStep = 0;
-        degreeSize = 0;
-        linearSize = 0;
+        degreeArrSize = 0;
+        stepArrSize = 0;
         goLen = 0;
         goCount = 0;
         goDistance = 0;
+
+        stopArrSize = 0;
     }
 
     public static void predictRoute(String pathname){
@@ -95,13 +102,23 @@ public class analyzeFromFile {
         initVariable();
         readOrientFile(pathname);
         readLinearFile(pathname);
-        for(int i = 0;i < degreeSize; i++){
-            // System.out.println(topArr[i]);
+        //让数据对齐,两种数组的大小一致
+        if(stepArrSize > degreeArrSize) stepArrSize = degreeArrSize;
+        else degreeArrSize = stepArrSize;//防止出现错误
+
+        //统计停顿的时间
+        for(int i = 0;i < degreeArrSize; i++){
             cleanData(i);
         }
-        for(int i = 0;i < degreeSize; i++){
-            // updateRoute(i);
+        unionStopArr();
+
+        updateArray();
+
+        // 去除前
+        for(int i = 0;i < degreeArrSize; i++){
+            updateRoute(i);
         }
+        // 去除后
 
         System.out.println(String.format("%s-%s(%.1f分钟)" , new SimpleDateFormat("[MM-dd]HH:mm:ss").format(startTime), new SimpleDateFormat("HH:mm:ss").format(oneSecondDegreeEndTime),(float)(oneSecondDegreeEndTime-startTime)/60000));
         System.out.println(String.format("Go%d %d 米", goCount, goDistance));
@@ -111,46 +128,28 @@ public class analyzeFromFile {
 
     public static void readOrientFile(String pathname) {
         pathname = pathname.replace("Linear.txt", "Orientation.txt");
-        //防止文件建立或读取失败，用catch捕捉错误并打印，也可以throw;
-        //不关闭文件会导致资源的泄露，读写文件都同理
-        //Java7的try-with-resources可以优雅关闭文件，异常时自动关闭文件；详细解读https://stackoverflow.com/a/12665271
         try (FileReader reader = new FileReader(pathname);
-                BufferedReader br = new BufferedReader(reader) // 建立一个对象，它把文件内容转成计算机能读懂的语言
+                BufferedReader br = new BufferedReader(reader)
             ) {
             String line;
-            //网友推荐更加简洁的写法
             while ((line = br.readLine()) != null) {
-                // 一次读入一行数据
                 String[] data = line.split(",");
                 float[] values = new float[3];
                 values[0] = Float.parseFloat(data[1]);
                 values[1] = Float.parseFloat(data[2]);
                 values[2] = Float.parseFloat(data[3]);
-
                 appendCurSecondDegree(Long.parseLong(data[0]), values);
             }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        // TODO:
-        // for(int i=0;i<degreeSize;i+=1){
-            // System.out.println(degressArr[i] + " ");
-        // }
-        // System.out.println(degreeSize);
+        } catch (IOException e) { e.printStackTrace(); }
     }
 
     public static void readLinearFile(String pathname) {
         pathname = pathname.replace("Orientation.txt", "Linear.txt");
-        //防止文件建立或读取失败，用catch捕捉错误并打印，也可以throw;
-        //不关闭文件会导致资源的泄露，读写文件都同理
-        //Java7的try-with-resources可以优雅关闭文件，异常时自动关闭文件；详细解读https://stackoverflow.com/a/12665271
         try (FileReader reader = new FileReader(pathname);
-                BufferedReader br = new BufferedReader(reader) // 建立一个对象，它把文件内容转成计算机能读懂的语言
+                BufferedReader br = new BufferedReader(reader)
             ) {
             String line;
-            //网友推荐更加简洁的写法
             while ((line = br.readLine()) != null) {
-                // 一次读入一行数据
                 String[] data = line.split(",");
                 float[] values = new float[3];
                 values[0] = Float.parseFloat(data[1]);
@@ -160,74 +159,44 @@ public class analyzeFromFile {
                 float g = mang(values);
                 updateStep(Long.parseLong(data[0]), g);
             }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        // for(int i=0;i<linearSize;i+=1){
-            // System.out.println(stepArr[i] + " ");
-        // }
-        // System.out.println(linearSize);
-        if(linearSize > degreeSize)
-            linearSize = degreeSize;
-        else
-            degreeSize = linearSize;//防止出现错误
+        } catch (IOException e) { e.printStackTrace(); }
     }
 
     private static void updateStep(long t, float g) {
         boolean Up = (g > lastStepValue);
-        boolean top = false;
-        //NOTE: 顶点判定
-        if(g>9.5) top = true;
+        // 初始化当前秒的结束时间
+        if(stepArrSize==0) oneSecondDegreeEndTime = startTime + 1000;
+        //NOTE: 极值点判定
         if(lastStepUp && (!Up)){
             //NOTE: 时间和赋值判定
-            //infoText.append(" G=" + lastStepValue + "\n");
             if((t-lastStepTime)>MinStepTime && lastStepValue>MinStepValue){
                 lastStepTime = t;
                 curStep += 1;
             }
         }
 
-        if(linearSize==0){
-            oneSecondDegreeEndTime = startTime + 1000;
-            oneSecondTopCount = 0;
-            oneSecondTopSum = 0;
-        }
-
-        // 时间来到下一秒,将上一秒的数据更新
+        // 当前这秒时间结束,将上一秒的数据更新
         if(t >= oneSecondDegreeEndTime){
-            // if(oneSecondTopCount>0){
-                // topArr[linearSize] = oneSecondTopSum/oneSecondTopCount;
-            // }
-            // else
-                // topArr[linearSize] = 0;
-            topArr[linearSize] = oneSecondTopSum;
-            // System.out.println("avg=" + topArr[linearSize]);
-            stepArr[linearSize++] = curStep;
+            // 追加top数组和step数组, top用来判断停止的时间段
+            topArr[stepArrSize] = topMaxValue;
+            stepArr[stepArrSize++] = curStep;
             oneSecondDegreeEndTime += 1000;
-
-            oneSecondTopCount = 0;
-            oneSecondTopSum = 9.0;
+            topMaxValue = 0;
         }
 
-        if(top){
-            // System.out.println("top+" + g);
-            // oneSecondTopCount += 1;
-            // oneSecondTopSum += g;
-            if(g>oneSecondTopSum) oneSecondTopSum = g;
-            // System.out.println("sumtop+" + oneSecondTopSum);
-        }
-
+        // 更新当前秒的最大值
+        if(g>topMaxValue) topMaxValue = g;
         lastStepUp = Up;
         lastStepValue = g;
     }
 
 
     public static void appendCurSecondDegree(long curTime, float[] oriValues) {
-        if(degreeSize==0 && oneSecondDegreeLen==0){
+        if(degreeArrSize==0 && oneSecondDegreeLen==0){
             startTime = curTime;
             oneSecondDegreeEndTime = curTime + 1000;
         }else if(curTime >= oneSecondDegreeEndTime){
-            degressArr[degreeSize++] = averageOneSecond();
+            degreeArr[degreeArrSize++] = averageOneSecond();
             oneSecondDegreeEndTime += 1000;
             oneSecondDegreeLen = 0;
         }
@@ -263,7 +232,6 @@ public class analyzeFromFile {
             sum += transform(oneSecondDegreeArr[0], oneSecondDegreeArr[i]);
         }
         if(oneSecondDegreeLen == 0) return 0;
-        // System.out.println("avg:" + sum/oneSecondDegreeLen);
         return sum/oneSecondDegreeLen;
     }
 
@@ -281,7 +249,7 @@ public class analyzeFromFile {
         }
         float sum = 0;
         for(int i=end-size;i<end;i++){
-            sum += transform(degressArr[end-size], degressArr[i]);
+            sum += transform(degreeArr[end-size], degreeArr[i]);
         }
         return sum/size;
     }
@@ -293,7 +261,6 @@ public class analyzeFromFile {
                 yes += 1;
             }
         }
-        // System.out.println(yes + " / " + MinStopTime);
         return yes/MinStopTime >= stopScore;
     }
 
@@ -305,7 +272,7 @@ public class analyzeFromFile {
         float average = averageDegreeArr(waitIndex, MinGoTime);
         int yes = 0;
         for(int i=waitIndex-MinGoTime;i<waitIndex;i++){
-            if(Math.abs(diffDegree(degressArr[i], average)) <= limit){
+            if(Math.abs(diffDegree(degreeArr[i], average)) <= limit){
                 yes += 1;
             }
         }
@@ -320,7 +287,6 @@ public class analyzeFromFile {
         //NOTE:此时waitStopIndex 等于 size ，也就是最后一个(当前处理的)点的索引+1
         boolean curIsStop = false;
         curIsStop = judgeStop();
-        // System.out.println(size + " , " + curIsStop);
 
         if(curIsStop && lastIsStop){
             stopLen += 1;
@@ -328,9 +294,11 @@ public class analyzeFromFile {
             stopLen = MinStopTime;
         //当直行中断后的几秒并不需要判断,直接跳过,所以waitStopIndex + 4
         }else if(lastIsStop){
-            System.out.println(String.format("%3d~%3ds | %3d",waitStopIndex-stopLen-1, waitStopIndex-1, stopLen));
+            // System.out.println(String.format("%3d~%3ds | %3d",waitStopIndex-stopLen-1, waitStopIndex-1, stopLen));
+            stopArr[stopArrSize] = waitStopIndex-stopLen-1;
+            stopArr[stopArrSize+1] = waitStopIndex-1;
+            stopArrSize += 2;
             stopCount += 1;
-            stopDistance += stopLen;
             waitStopIndex += MinStopTime-1;
         }
 
@@ -359,10 +327,6 @@ public class analyzeFromFile {
         //NOTE:此时waitIndex 等于 size ，也就是最后一个(当前处理的)点的索引+1
         boolean curIsGo = false;
         curIsGo = judgeStraight();
-        // System.out.println(curIsGo);
-        // System.out.println(lastIsGo);
-        // System.out.println(goLen);
-        // System.out.println(size);
 
         if(curIsGo && lastIsGo){
             goLen += 1;
@@ -383,9 +347,9 @@ public class analyzeFromFile {
     }
 
     private static int diffStep(int end, int size) {
-        // System.out.println("stepArr:"+ degreeSize + " " + end + " " + size + " " + stepArr[degreeSize-1]);
-        if(end >= degreeSize)
-            end = degreeSize - 1;
+        // System.out.println("stepArr:"+ degreeArrSize + " " + end + " " + size + " " + stepArr[degreeArrSize-1]);
+        if(end >= degreeArrSize)
+            end = degreeArrSize - 1;
         if(end < size){
             System.out.println("error in diffStep " + end + "," + size);
             size = end;
@@ -396,5 +360,73 @@ public class analyzeFromFile {
         return (float)Math.sqrt(values[0]*values[0] + values[1]*values[1] + values[2]*values[2]);
     }
 
+    /**
+     * 合并较相近的停顿片段
+     * 比如1-20s是停顿,22-50s也是停顿,会通过向两边增长20%的判断相连的方式将他们合并
+     * stopArr刚开始存储的是clean算法得出的停顿区间
+     * 合并之后的区间也放到了stopArr中了
+     */
+    private static void unionStopArr(){
+        int start = 0;
+        int end = 0;
+        double len = 0;
+        double last = -100; //上一段区间延伸之后达到的距离
 
+        int newStopSize = -2;
+        for (int i = 0; i < stopArrSize; i+=2) {
+            start = stopArr[i];
+            end = stopArr[i+1];
+            len = (end - start);
+            if ((start - len*0.2) <= last) {
+                stopArr[i] = stopArr[i-2];
+                len = stopArr[i+1] - stopArr[i];
+                stopArr[newStopSize + 1] = end;
+            }
+            else{
+                newStopSize += 2;
+                stopArr[newStopSize] = start;
+                stopArr[newStopSize + 1] = end;
+            }
+            last = stopArr[i+1] + len * 0.2;
+        }
+        stopArrSize = newStopSize + 2;
+
+        for (int i = 0; i < stopArrSize; i+=2) {
+            start = stopArr[i];
+            end = stopArr[i+1];
+            System.out.println(String.format("%d~%ds | %d", start,end , end - start));
+        }
+    }
+
+    private static void updateArray(){
+        for (int i = 0; i < stepArrSize; i++) {
+            // System.out.println("pre"+stepArr[i]);
+        }
+        // System.out.println("prelen"+stepArrSize);
+        // step数组删除的方法
+        for (int i = stopArrSize - 2; i >= 0; i-=2) {
+
+            int start = stopArr[i];
+            int end = stopArr[i+1] + 1;
+            int diff = end - start;
+
+            int stepDiff = stepArr[end] - stepArr[start];
+            stepArrSize -= diff;
+            // 删除step
+            for (int j = start; j < stepArrSize; j++) {
+                stepArr[j] = stepArr[j+diff] - stepDiff;
+            }
+
+            //删除degree
+            degreeArrSize -= diff;
+            for (int j = start; j < degreeArrSize; j++) {
+                degreeArr[j] = degreeArr[j+diff];
+            }
+
+        }
+        for (int i = 0; i < stepArrSize; i++) {
+            // System.out.println("old"+stepArr[i]);
+        }
+        // System.out.println("oldlen"+stepArrSize);
+    }
 }
