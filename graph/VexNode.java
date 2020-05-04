@@ -1,9 +1,13 @@
 public class VexNode {
     /*顶点结点*/
-    char data;//顶点信息
+    String info;//顶点信息
+    double lat;
+    double lng;
     ArcNode head;//边表头指针，指向邻接边
-    public VexNode(char da){
-        data=da;
+    public VexNode(String in, double ln, double la){
+        info=in;
+        lng=ln;
+        lat=la;
         head=null;
     }
 }
