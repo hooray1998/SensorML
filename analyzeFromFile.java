@@ -70,7 +70,7 @@ public class analyzeFromFile {
         topArr = new double[MaxSize];
         stopArr = new int[MaxSize];
 
-        predictRoute("./419-data/1587283150306_predict_Linear.txt");
+        predictRoute("./niceData/1588506829888_predict_Orientation.txt");
     }
 
     public static void initVariable() {
@@ -107,12 +107,12 @@ public class analyzeFromFile {
         else degreeArrSize = stepArrSize;//防止出现错误
 
         //统计停顿的时间
-        for(int i = 0;i < degreeArrSize; i++){
-            cleanData(i);
-        }
-        unionStopArr();
+        // for(int i = 0;i < degreeArrSize; i++){
+        //     cleanData(i);
+        // }
+        // unionStopArr();
 
-        updateArray();
+        // updateArray();
 
         // 去除前
         for(int i = 0;i < degreeArrSize; i++){

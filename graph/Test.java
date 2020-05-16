@@ -1,14 +1,34 @@
-/**
- * Test
- */
+import java.io.File;
+import java.io.InputStreamReader;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.FileInputStream;
+import java.io.FileWriter;
 public class Test {
     public static void print(double[][] l){
         for (double[] ds : l) {
-            for (double var : ds) {
-                System.out.print(var + " ");
-            }
+            System.out.print(ds[0] + "," + ds[1]);
             System.out.println();
         }
+    }
+
+    public static void MatchDistance(String label, double[][] a, double[][] b){
+        System.out.println("=======================");
+        double distance = new Dtw().getDistance(a, b);
+        try{
+            File writename = new File("../routes/" + label + "#" + distance); // 相对路径，如果没有则要建立一个新的output。txt文件
+            writename.createNewFile(); // 创建新文件
+            BufferedWriter out = new BufferedWriter(new FileWriter(writename));
+            for (double[] ds : b) {
+                out.write(ds[0] + "," + ds[1]+"\n");
+            }
+            out.flush(); // 把缓存区内容压入文件
+            out.close(); // 最后记得关闭文件
+
+        } catch (Exception e) {
+			e.printStackTrace();
+		}
+        System.out.println("=======================");
     }
 
     private static double rad(double d) {
@@ -17,31 +37,15 @@ public class Test {
     public static void main(String[] args) {
         CleanFile cf = new CleanFile();
         cf.init();
+        System.out.println("start");
 
         System.out.println(cf.predictRoute("./data/1588508030284_predict_Orientation.txt"));
         double x = 0;
         double y = 0;
         double d, a, X, Y;
-        double temp;
+        cf.reverse();
 
-        // 反转数据,从左下往右上进行
-        for (int i = 0; i < cf.finalSize; i++) {
-            // d = cf.finalDistance[i];
-            temp = cf.finalDegree[i] - 180;
-            if(temp < 0 ) temp += 360;
-            if(temp >= 360 ) temp -= 360;
-            System.out.println(cf.finalDegree[i] + " => " + temp);
-            cf.finalDegree[i] = temp;
-        }
-        for (int i = 0; i < cf.finalSize/2; i++) {
-            temp = cf.finalDistance[i];
-            cf.finalDistance[i] = cf.finalDistance[cf.finalSize - i - 1];
-            cf.finalDistance[cf.finalSize - i - 1] = temp;
-            temp = cf.finalDegree[i];
-            cf.finalDegree[i] = cf.finalDegree[cf.finalSize - i - 1];
-            cf.finalDegree[cf.finalSize - i - 1] = temp;
-        }
-
+        System.out.println("print data");
 
         for (int i = 0; i < cf.finalSize; i++) {
             d = cf.finalDistance[i];
@@ -53,21 +57,22 @@ public class Test {
             a = cf.finalDegree[i];
             X = d * Math.sin(rad(a));
             Y = d * Math.cos(rad(a));
-            System.out.println("X="+X+" Y="+Y);
             x += X;
             y += Y;
+            System.out.println("xxx="+x+" yyy="+y);
         }
-        System.out.println("xxx="+x+" yyy="+y);
 
 
         VGraph gp=new VGraph("map.txt"); //初始化邻接表
         gp.ShowGraph();  //显示邻接表
         gp.BFSGraph(0, 18);  //广度优先遍历邻接表
+
+        // 计算 距离和角度偏移
         double real_direct = (Math.atan(x/y) * 180 / Math.PI);
         double real_distance = Math.sqrt(x*x + y*y);
 
-        double expect_direct = gp.getAngle(gp.list[0].lng, gp.list[0].lat, gp.list[17].lng, gp.list[17].lat);
-        double expect_distance  = gp.getDistance(gp.list[0].lng, gp.list[0].lat, gp.list[17].lng, gp.list[17].lat);
+        double expect_direct = gp.getAngle(0, 17);
+        double expect_distance  = gp.getDistance(0, 17);
 
         double revise_direct = expect_direct - real_direct;
         double revise_distance = expect_distance / real_distance;
@@ -75,6 +80,7 @@ public class Test {
         System.out.println(expect_direct + " , " + expect_distance);
         System.out.println(revise_direct + " , " + revise_distance);
 
+        // 纠正后的坐标存入xy_real
         x = 0; y = 0;
         double[][] xy_real = new double[cf.finalSize+1][2];
         xy_real[0][0] = 0;
@@ -90,36 +96,12 @@ public class Test {
             xy_real[i+1][1] = y;
         }
 
-
-        int[] l1 = {0, 1, 2, 3, 8, 9, 13, 17};
-        double[][] xy_mat1 = gp.getXYList(l1);
-        int[] l2 = {0, 1, 6, 7, 8, 9, 13, 17};
-        double[][] xy_mat2 = gp.getXYList(l2);
-        int[] l3 = {0, 1, 6, 7, 8, 9, 13, 12};
-        double[][] xy_mat3 = gp.getXYList(l3);
-        int[] l4 = {0, 1, 2, 7, 8, 9, 13, 17};
-        double[][] xy_mat4 = gp.getXYList(l4);
-        int[] l5 = {0, 1, 2, 3, 4, 9, 13, 17};
-        double[][] xy_mat5 = gp.getXYList(l5);
-        int[] l6 = {0, 1, 2, 3, 8, 12, 13, 17};
-        double[][] xy_mat6 = gp.getXYList(l6);
-        System.out.println(xy_mat1);
-        print(xy_mat1);
-        print(xy_mat2);
-        print(xy_real);
-
-        Dtw dtw = new Dtw();
-        double[] _x = { 3, 5, 6, 7, 7, 1 };
-        double[] _y = { 3, 6, 6, 7, 8, 1, 1 };
-        double[] _z = { 2, 5, 7, 7, 7, 7, 2 };
-        System.out.println(dtw.getDistance(_x, _y));
-        System.out.println(dtw.getDistance(_x, _z));
-
-        System.out.println(dtw.getDistance(xy_real, xy_mat1));
-        System.out.println(dtw.getDistance(xy_real, xy_mat2));
-        System.out.println(dtw.getDistance(xy_real, xy_mat3));
-        System.out.println(dtw.getDistance(xy_real, xy_mat4));
-        System.out.println(dtw.getDistance(xy_real, xy_mat5));
-        System.out.println(dtw.getDistance(xy_real, xy_mat6));
+        MatchDistance("k", xy_real, xy_real);
+        MatchDistance("c", xy_real, gp.getXYList(new int[]{0, 1, 2, 3, 4, 9, 13, 17}));
+        MatchDistance("r", xy_real, gp.getXYList(new int[]{0, 1, 2, 3, 8, 9, 13, 17}));
+        MatchDistance("b", xy_real, gp.getXYList(new int[]{0, 1, 2, 3, 8, 12, 13, 17}));
+        MatchDistance("g", xy_real, gp.getXYList(new int[]{0, 1, 2, 7, 8, 9, 13, 17}));
+        MatchDistance("y", xy_real, gp.getXYList(new int[]{0, 1, 6, 7, 8, 9, 13, 17}));
+        MatchDistance("m", xy_real, gp.getXYList(new int[]{0, 1, 6, 11, 12, 13, 17}));
     }
 }

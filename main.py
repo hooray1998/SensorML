@@ -28,42 +28,94 @@ from calDegree import averageOrient, recognizeStraight
 def mo(l):
     return sum([v**2 for v in l])**0.5
 
+def getData(filepath):
+    data = np.loadtxt(filepath, delimiter=',')
+    time = data[:, 0]
+    time = time - time[0]
+    if 'Ori' in filepath:
+        values = np.array([l for l in data[:, 1]])
+    elif 'Lin' in filepath:
+        values = np.array([mo(l) for l in data[:, 1:]])
+    return [time, values]
+
 
 def loadData(folderList, curProcess):
     dataMat = []
     for folder in folderList:
-        for fname in os.listdir(folder):
+        if '.txt' in folder:
+            fname = folder
             if curProcess in fname:
                 print(fname)
-                data = np.loadtxt(os.path.join(folder, fname), delimiter=',')
-                time = data[:, 0]
-                time = time - time[0]
-                if 'Ori' in fname:
-                    values = np.array([l for l in data[:, 1]])
-                elif 'Lin' in fname:
-                    values = np.array([mo(l) for l in data[:, 1:]])
-                dataMat.append([time, values])
+                dataMat.append(getData(fname))
+        else:
+            for fname in os.listdir(folder):
+                if curProcess in fname:
+                    print(fname)
+                    dataMat.append(getData(os.path.join(folder, fname)))
     return dataMat
 
 
 def main():
-    process = 'Lin'
-    dataMat = loadData(['./419-data/'], process)
+    process = 'Ori'
+    dataMat = loadData(['./niceData/'], process)
 
     for times, values in dataMat:
         plt.plot(times, values)
         if 'O' in process:
             newT, newV = averageOrient(times, values, 1000)
-            plt.plot(newT, newV, 'o-', ms=8)
+            plt.plot(newT, newV, 'o-', ms=3)
             newT, newV, goLen, goOrient = recognizeStraight(newT, newV)
-            plt.title("文件名 => %s" % (process))
-            plt.plot(newT, newV, 'v', ms=20)
+            plt.title("Orient")
+            #  plt.plot(newT, newV, 'v', ms=20)
             for i in range(0, len(goLen)):
                 print(newT[i], goLen[i] * 2, goOrient[i])
         elif 'L' in process:
             topList = calStep(times, values)
-            plt.title("步数 => %d" % (len(topList)))
-            plt.plot(times[topList], values[topList], 'o')
+            plt.title("Count => %d" % (len(topList)))
+            plt.plot(times[topList], values[topList], 'o', ms=3)
+
+        timeArr = [[  0, 12 ],
+                   [ 13, 51 ],
+                   [ 52,100 ],
+                   [101,193 ],
+                   [194,322 ],
+                   [323,395 ],
+                   [396,401 ],
+                   [402,437 ],
+                   [438,480 ],
+                   [481,487 ],
+                   [490,498 ],
+                   [499,510 ],
+                   [511,529 ],
+                   [533,600 ],
+                   [601,657 ],
+                   [658,925 ],
+                   [926,1067]]
+
+        for i,t in enumerate(timeArr):
+            c = ['g','k'][i%2]
+            plt.hlines(-100, t[0]*1000, t[1]*1000, colors=c, linestyles='solid', lw=20)
+            plt.vlines(t[0]*1000, -100, 400, colors='r', linestyles='dashed', lw=1)
+            plt.vlines(t[1]*1000, -100, 400, colors='r', linestyles='dashed', lw=1)
+
+
+#    0~ 12s |  10m |  63.6° |  12 | 0.8 m/s
+#   13~ 51s |   8m |  84.3° |  38 | 0.2 m/s
+#   52~100s | 108m |  68.2° |  48 | 2.3 m/s
+#  101~193s | 204m |  69.0° |  92 | 2.2 m/s
+#  194~322s | 268m | 329.1° | 128 | 2.1 m/s
+#  323~395s | 170m |  64.5° |  72 | 2.4 m/s
+#  396~401s |  10m | 147.0° |   5 | 2.0 m/s
+#  402~437s |  84m | 169.1° |  35 | 2.4 m/s
+#  438~480s |  92m | 175.5° |  42 | 2.2 m/s
+#  481~487s |   8m | 142.7° |   6 | 1.3 m/s
+#  490~498s |   2m | 133.5° |   8 | 0.3 m/s
+#  499~510s |   6m | 178.7° |  11 | 0.5 m/s
+#  511~529s |   4m | 219.2° |  18 | 0.2 m/s
+#  533~600s |  96m |  61.2° |  67 | 1.4 m/s
+#  601~657s |  40m | 310.4° |  56 | 0.7 m/s
+#  658~925s | 580m | 335.4° | 267 | 2.2 m/s
+#  926~1067s | 300m |  78.9° | 141 | 2.1 m/s
         mng = plt.get_current_fig_manager()
         mng.full_screen_toggle()
         plt.show()

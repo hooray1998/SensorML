@@ -21,12 +21,15 @@
 
 def calStep(times, values):
     ret = []
-    difftime = 300
+    difftime = 150
     lastTime = -difftime
     for i in range(1, len(values)-1):
         v = values[i]
         if v > values[i-1] and v > values[i+1]:
-            if times[i] > lastTime + difftime:
-                ret.append(i)
-                lastTime = times[i]
+            if times[i] < lastTime + difftime:
+                continue
+            if v < 10.5:
+                continue
+            ret.append(i)
+            lastTime = times[i]
     return ret

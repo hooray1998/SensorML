@@ -42,7 +42,8 @@ def diffDegress(a, b):
 
 def calGoOrientAvg(dList):
     newList = [transform(dList[0], curDegree) for curDegree in dList]
-    return sum(newList) / len(dList)
+    re = sum(newList) / len(dList)
+    return re
 
 
 def judgeStraight(dList, limit=15, score=0.8):

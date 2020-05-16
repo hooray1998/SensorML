@@ -164,6 +164,6 @@ if __name__ == "__main__":
     # m = RegrModel('divide.dat')
     # sum += m.fit(linear_model.LinearRegression())
     # print('groupSize:%2d => 准确率:%.2f' % (groupSize, sum / time))
-    divide(['newalldata/', 'alldata/'], 'Angular', 10)
+    divide(['alldata/'], 'Angular', 10)
     m = RegrModel('divide.dat')
     m.fit(linear_model.LinearRegression())

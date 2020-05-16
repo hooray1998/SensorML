@@ -116,6 +116,54 @@ public class CleanFile {
         return infoText;
     }
 
+    public void reverse() {
+        // 反转数据,从左下往右上进行
+        // 统一修改方向
+        double temp;
+        for (int i = 0; i < finalSize; i++) {
+            temp = finalDegree[i] - 180;
+            if(temp < 0 ) temp += 360;
+            if(temp >= 360 ) temp -= 360;
+            finalDegree[i] = temp;
+        }
+        // 首位交换所有的距离和方向
+        for (int i = 0; i < finalSize/2; i++) {
+            temp = finalDistance[i];
+            finalDistance[i] = finalDistance[finalSize - i - 1];
+            finalDistance[finalSize - i - 1] = temp;
+            temp = finalDegree[i];
+            finalDegree[i] = finalDegree[finalSize - i - 1];
+            finalDegree[finalSize - i - 1] = temp;
+        }
+    }
+    public void printData() {
+        double d, a, X, Y;
+        for (int i = 0; i < finalSize; i++) {
+            d = finalDistance[i];
+            a = finalDegree[i];
+            System.out.println( d + "," + a);
+        }
+    }
+
+    public void calXY() {
+        double x = 0;
+        double y = 0;
+        double d, a, X, Y;
+        for (int i = 0; i < finalSize; i++) {
+            d = finalDistance[i];
+            a = finalDegree[i];
+            X = d * Math.sin(rad(a));
+            Y = d * Math.cos(rad(a));
+            x += X;
+            y += Y;
+            System.out.println("xxx="+x+" yyy="+y);
+        }
+    }
+
+    private static double rad(double d) {
+        return d * Math.PI / 180.0;
+    }
+
     public void readOrientFile(String pathname) {
         pathname = pathname.replace("Linear.txt", "Orientation.txt");
         try {
