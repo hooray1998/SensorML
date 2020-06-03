@@ -36,7 +36,10 @@ def getData(filepath):
         values = np.array([l for l in data[:, 1]])
     elif 'Lin' in filepath:
         values = np.array([mo(l) for l in data[:, 1:]])
-    return [time, values]
+        valuesX = data[:, 1]
+        valuesY = data[:, 2]
+        valuesZ = data[:, 3]
+    return [time, values, [valuesX, valuesY, valuesZ]]
 
 
 def loadData(folderList, curProcess):
@@ -57,29 +60,18 @@ def loadData(folderList, curProcess):
 
 def main():
     process = 'Lin'
-    dataMat = loadData(['./godata/1582626951637_直行_2_Linear.txt'], process)
-
-    for times, values in dataMat:
-        plt.xticks(np.arange(times[0], times[-1], 200))
+    dataMat = loadData(['./419-data/'], process)
+    plt.xticks(fontsize=20)
+    plt.yticks(fontsize=20)
+    plt.xlabel('time/ms', fontsize=20)
+    plt.ylabel('acceleration/(m/s²)', fontsize=20)
+    plt.title('Acceleration', fontsize=20)
+    #  plt.title('Acceleration XYZ', fontsize=20)
+    for times, values, originValues in dataMat:
         plt.plot(times, values)
-        plt.xticks(fontsize=20)
-        plt.yticks(fontsize=20)
-        plt.xlabel('time/ms', fontsize=20)
-        plt.ylabel('acceleration/(m/s²)', fontsize=20)
-        plt.title('Count distance', fontsize=20)
-        if 'O' in process:
-            newT, newV = averageOrient(times, values, 1000)
-            plt.plot(newT, newV, 'o-', ms=3)
-            newT, newV, goLen, goOrient = recognizeStraight(newT, newV)
-            plt.title("Orient")
-            plt.plot(newT, newV, 'v', ms=30)
-            for i in range(0, len(goLen)):
-                print(newT[i], goLen[i] * 2, goOrient[i])
-        elif 'L' in process:
-            topList = calStep(times, values)
-            #  plt.title("Count => %d" % (len(topList)))
-            plt.plot(times[topList], values[topList], 'o', ms=9)
-
+        #  plt.plot(times, originValues[0])
+        #  plt.plot(times, originValues[1])
+        #  plt.plot(times, originValues[2])
 
 #    0~ 12s |  10m |  63.6° |  12 | 0.8 m/s
 #   13~ 51s |   8m |  84.3° |  38 | 0.2 m/s

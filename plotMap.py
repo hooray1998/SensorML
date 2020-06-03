@@ -18,15 +18,18 @@ for index,fname in enumerate(os.listdir('routes/')):
         label = 'route-'+color
         routeList.append([distance, color, label])
         plt.plot(data[:,0] + index * 5, data[:,1] + index * 10, '*-', color=color, lw=6, label=label)
+    plt.xlabel('X/m', fontsize=10)
+    plt.ylabel('Y/m', fontsize=10)
 
 font1 = {
 'weight' : 'normal',
-'size'   : 13,
+'size'   : 10,
 }
-plt.title('Map route')
+plt.title('Map route', fontsize=10)
 plt.legend(loc='upper left', prop=font1)
 plt.subplot(122)
 routeList = sorted(routeList, key=lambda e: e[0], reverse=False)
 plt.barh(range(len(routeList)), [ e[0] for e  in routeList] , color=''.join([ e[1] for e in routeList ]), tick_label=[ e[2] for e in routeList ])
-plt.title('Route distance')
+plt.title('Route distance', fontsize=10)
+plt.xlabel('distance value', fontsize=10)
 plt.show()

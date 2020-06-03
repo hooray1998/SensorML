@@ -28,7 +28,7 @@ def calStep(times, values):
         if v > values[i-1] and v > values[i+1]:
             if times[i] < lastTime + difftime:
                 continue
-            if v < 10.5:
+            if v < 13:
                 continue
             ret.append(i)
             lastTime = times[i]

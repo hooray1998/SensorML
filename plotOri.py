@@ -56,29 +56,52 @@ def loadData(folderList, curProcess):
 
 
 def main():
-    process = 'Lin'
-    dataMat = loadData(['./godata/1582626951637_直行_2_Linear.txt'], process)
+    process = 'Ori'
+    dataMat = loadData(['./niceData/'], process)
 
     for times, values in dataMat:
-        plt.xticks(np.arange(times[0], times[-1], 200))
         plt.plot(times, values)
-        plt.xticks(fontsize=20)
-        plt.yticks(fontsize=20)
-        plt.xlabel('time/ms', fontsize=20)
-        plt.ylabel('acceleration/(m/s²)', fontsize=20)
-        plt.title('Count distance', fontsize=20)
         if 'O' in process:
             newT, newV = averageOrient(times, values, 1000)
             plt.plot(newT, newV, 'o-', ms=3)
             newT, newV, goLen, goOrient = recognizeStraight(newT, newV)
             plt.title("Orient")
-            plt.plot(newT, newV, 'v', ms=30)
+            #  plt.plot(newT, newV, 'v', ms=20)
             for i in range(0, len(goLen)):
                 print(newT[i], goLen[i] * 2, goOrient[i])
         elif 'L' in process:
             topList = calStep(times, values)
-            #  plt.title("Count => %d" % (len(topList)))
-            plt.plot(times[topList], values[topList], 'o', ms=9)
+            plt.title("Count => %d" % (len(topList)))
+            plt.plot(times[topList], values[topList], 'o', ms=3)
+
+        timeArr = [[  0, 12 ],
+                   [ 13, 51 ],
+                   [ 52,100 ],
+                   [101,193 ],
+                   [194,322 ],
+                   [323,395 ],
+                   [396,401 ],
+                   [402,437 ],
+                   [438,480 ],
+                   [481,487 ],
+                   [490,498 ],
+                   [499,510 ],
+                   [511,529 ],
+                   [533,600 ],
+                   [601,657 ],
+                   [658,925 ],
+                   [926,1067]]
+
+        for i,t in enumerate(timeArr):
+            c = ['g','k'][i%2]
+            plt.hlines(-100, t[0]*1000, t[1]*1000, colors=c, linestyles='solid', lw=20)
+            plt.vlines(t[0]*1000, -100, 400, colors='r', linestyles='dashed', lw=1)
+            plt.vlines(t[1]*1000, -100, 400, colors='r', linestyles='dashed', lw=1)
+        plt.xticks(fontsize=20)
+        plt.yticks(fontsize=20)
+        plt.xlabel('time/ms', fontsize=20)
+        plt.ylabel('orient/degree', fontsize=20)
+        plt.title('Orientation', fontsize=20)
 
 
 #    0~ 12s |  10m |  63.6° |  12 | 0.8 m/s
